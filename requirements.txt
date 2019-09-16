@@ -1,0 +1,6 @@
+torch==0.1.2
+networkx==1.11
+tensorboard
+tensorboard_logger
+numpy
+joblib

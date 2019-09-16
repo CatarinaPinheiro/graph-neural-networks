@@ -27,6 +27,8 @@ from utils import datasets
 from models.MPNN import MPNN
 from models.MPNNv2 import MPNNv2
 from models.MPNNv3 import MPNNv3
+from models.CNPP import CNPP
+from models.Attention import Attention
 from utils.LogMetric import AverageMeter, Logger
 
 
@@ -71,6 +73,7 @@ parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching thread
 # Model modification
 parser.add_argument('--model', type=str,help='MPNN model name [MPNN, MPNNv2, MPNNv3]',
                         default='MPNN')
+parser.add_argument('--fast', action='store_true', help='Computes just a small portion of dataset for testing purposes')
 
 
 args = parser.parse_args()
@@ -92,9 +95,14 @@ def main(args):
     idx = np.random.permutation(len(files))
     idx = idx.tolist()
 
-    valid_ids = [files[i] for i in idx[0:10000]]
-    test_ids = [files[i] for i in idx[10000:20000]]
-    train_ids = [files[i] for i in idx[20000:]]
+    if args.fast:
+        valid_ids = [files[i] for i in idx[0:100]]
+        test_ids = [files[i] for i in idx[100:200]]
+        train_ids = [files[i] for i in idx[200:300]]
+    else:
+        valid_ids = [files[i] for i in idx[0:10000]]
+        test_ids = [files[i] for i in idx[10000:20000]]
+        train_ids = [files[i] for i in idx[20000:]]
 
     data_train = utils.Qm9(root, train_ids, edge_transform=datasets.qm9_edges, e_representation='raw_distance')
     data_valid = utils.Qm9(root, valid_ids, edge_transform=datasets.qm9_edges, e_representation='raw_distance')
@@ -139,6 +147,10 @@ def main(args):
         model = MPNNv2(in_n, [5, 15, 15], [10, 20, 20], l_target, type=type)
     elif args.model == 'MPNNv3':
         model = MPNNv3([1, 2, 3, 4], in_n, [5, 15, 15], 30, l_target, type=type)
+    elif args.model == 'CNPP':
+        model = CNPP([1, 2, 3, 4], in_n, [5, 15, 15], 30, l_target, type=type)
+    elif args.model == 'Attention':
+        model = Attention([1, 2, 3, 4])
     else:
         model = MPNN(in_n, hidden_state_size, message_size, n_layers, l_target, type=type)
     del in_n, hidden_state_size, message_size, n_layers, l_target, type
@@ -250,8 +262,8 @@ def train(train_loader, model, criterion, optimizer, epoch, evaluation, logger):
         train_loss = criterion(output, target)
 
         # Logs
-        losses.update(train_loss.data[0], g.size(0))
-        error_ratio.update(evaluation(output, target).data[0], g.size(0))
+        losses.update(train_loss.data.item(), g.size(0))
+        error_ratio.update(evaluation(output, target).data.item(), g.size(0))
 
         # compute gradient and do SGD step
         train_loss.backward()
@@ -298,8 +310,8 @@ def validate(val_loader, model, criterion, evaluation, logger=None):
         output = model(g, h, e)
 
         # Logs
-        losses.update(criterion(output, target).data[0], g.size(0))
-        error_ratio.update(evaluation(output, target).data[0], g.size(0))
+        losses.update(criterion(output, target).data.item(), g.size(0))
+        error_ratio.update(evaluation(output, target).data.item(), g.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)

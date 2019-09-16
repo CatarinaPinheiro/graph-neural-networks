@@ -19,6 +19,7 @@ import os
 import argparse
 import time
 import torch
+from torch.nn.functional import softmax
 
 import torch.nn as nn
 from torch.autograd.variable import Variable
@@ -43,9 +44,10 @@ class MessageFunction(nn.Module):
         self.m_definition = message_def.lower()
 
         self.m_function = {
-                    'duvenaud':         self.m_duvenaud,
-                    'intnet':             self.m_intnet,
-                    'mpnn':             self.m_mpnn,
+                    'duvenaud':        self.m_duvenaud,
+                    'intnet':          self.m_intnet,
+                    'mpnn':            self.m_mpnn,
+                    'gat':             self.m_gat
                 }.get(self.m_definition, None)
 
         if self.m_function is None:
@@ -54,16 +56,18 @@ class MessageFunction(nn.Module):
 
         init_parameters = {
             'duvenaud': self.init_duvenaud,            
-            'intnet':     self.init_intnet,
-            'mpnn':     self.init_mpnn
+            'intnet':   self.init_intnet,
+            'mpnn':     self.init_mpnn,
+            'gat':      self.init_gat
         }.get(self.m_definition, lambda x: (nn.ParameterList([]), nn.ModuleList([]), {}))
 
         self.learn_args, self.learn_modules, self.args = init_parameters(args)
 
         self.m_size = {
                 'duvenaud':     self.out_duvenaud,            
-                'intnet':         self.out_intnet,
-                'mpnn':         self.out_mpnn
+                'intnet':       self.out_intnet,
+                'mpnn':         self.out_mpnn,
+                'gat':          self.out_gat
             }.get(self.m_definition, None)
 
     # Get the name of the used message function
@@ -78,6 +82,16 @@ class MessageFunction(nn.Module):
     def get_out_size(self, size_h, size_e, args=None):
         return self.m_size(size_h, size_e, args)
     
+    # Velickovic et al. (2018), Graph Attention Networks
+    def m_gat(self, h_v, h_w, e_vw, args):
+        alpha = softmax(e
+        return alpha*e_vw*h_w
+
+    def out_gat(self, size_h, size_e, args):
+        pass
+
+    def init_gat(self, params):
+        pass
     
     # Duvenaud et al. (2015), Convolutional Networks for Learning Molecular Fingerprints
     def m_duvenaud(self, h_v, h_w, e_vw, args):
