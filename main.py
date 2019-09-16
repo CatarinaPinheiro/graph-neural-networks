@@ -30,6 +30,7 @@ from models.MPNNv3 import MPNNv3
 from models.CNPP import CNPP
 from models.Attention import Attention
 from utils.LogMetric import AverageMeter, Logger
+from torchsummary import summary
 
 
 # Parser check
@@ -148,9 +149,9 @@ def main(args):
     elif args.model == 'MPNNv3':
         model = MPNNv3([1, 2, 3, 4], in_n, [5, 15, 15], 30, l_target, type=type)
     elif args.model == 'CNPP':
-        model = CNPP([1, 2, 3, 4], in_n, [5, 15, 15], 30, l_target, type=type)
+        model = CNPP(in_n, hidden_state_size, message_size, n_layers, l_target, type=type)
     elif args.model == 'Attention':
-        model = Attention([1, 2, 3, 4])
+        model = Attention(512)
     else:
         model = MPNN(in_n, hidden_state_size, message_size, n_layers, l_target, type=type)
     del in_n, hidden_state_size, message_size, n_layers, l_target, type

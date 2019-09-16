@@ -84,7 +84,9 @@ class MessageFunction(nn.Module):
     
     # Velickovic et al. (2018), Graph Attention Networks
     def m_gat(self, h_v, h_w, e_vw, args):
-        alpha = softmax(e
+        d = 512
+        alpha = softmax(((Wq*h_v).T*(Wu*h_w))/(torch.sqrt(d)))
+
         return alpha*e_vw*h_w
 
     def out_gat(self, size_h, size_e, args):
